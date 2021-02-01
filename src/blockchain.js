@@ -119,7 +119,7 @@ class Blockchain {
             if(lessThan5mins){
                 const verifyFlag =bitcoinMessage.verify(message, address, signature)
                 if(verifyFlag){
-                    const newBlock = new BlockClass.Block({star,owner:address})
+                    const newBlock = new BlockClass.Block({star:star,owner:address})
                     this._addBlock(newBlock)
                     resolve({
                         message:"Star is submitted.",
