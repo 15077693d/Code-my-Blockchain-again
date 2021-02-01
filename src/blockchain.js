@@ -13,7 +13,6 @@ const BlockClass = require('./block.js');
 const bitcoinMessage = require('bitcoinjs-message');
 
 class Blockchain {
-
     /**
      * Constructor of the class, you will need to setup your chain array and the height
      * of your chain (the length of your chain array).
@@ -64,7 +63,17 @@ class Blockchain {
     _addBlock(block) {
         let self = this;
         return new Promise(async (resolve, reject) => {
-           
+            try{
+                block.previousBlockHash = self.height + 1===0?null:self.chain[self.height].hash
+                block.height = self.height + 1
+                block.time = Date.now()
+                block.hash = SHA256(JSON.stringify(block)).toString()
+                this.height+=1
+                this.chain.push(block)
+                resolve({message:"block is added",code:200,block:block})
+            }catch(error){
+                reject({message:error, code:404, block:false})
+            }
         });
     }
 
@@ -78,7 +87,7 @@ class Blockchain {
      */
     requestMessageOwnershipVerification(address) {
         return new Promise((resolve) => {
-            
+            resolve(`${address}:${new Date().getTime().toString().slice(0,-3)}:starRegistry`)    
         });
     }
 
@@ -102,7 +111,35 @@ class Blockchain {
     submitStar(address, message, signature, star) {
         let self = this;
         return new Promise(async (resolve, reject) => {
-            
+            const time = parseInt(message.split(':')[1])
+            // h/m/s
+            const currentTime = parseInt(new Date().getTime().toString().slice(0, -3))
+            const minutes = (currentTime - parseInt(time))/60
+            const lessThan5mins = currentTime - minutes < 5
+            if(lessThan5mins){
+                const verifyFlag =bitcoinMessage.verify(message, address, signature)
+                if(verifyFlag){
+                    const newBlock = new BlockClass.Block({star,owner:address})
+                    this._addBlock(newBlock)
+                    resolve({
+                        message:"Star is submitted.",
+                        block:newBlock,
+                        code:200
+                    })
+                }else{
+                    reject({
+                        message:"Flag is not verified.",
+                        block:false,
+                        code:404
+                    })
+                }
+            }else{
+                reject({
+                    message:"Minutes is more than 5mins",
+                    block:false,
+                    code:404
+                })
+            }
         });
     }
 
@@ -115,7 +152,32 @@ class Blockchain {
     getBlockByHash(hash) {
         let self = this;
         return new Promise((resolve, reject) => {
-           
+            try{
+              const theBlock = self.chain.filter(
+                block => block.hash===hash
+                ) 
+              if(theBlock.length===0){
+                reject({
+                    message:"No matching hash",
+                    code:404,
+                    block:false
+                })
+              }else{
+                resolve({
+                    message:"Success get block",
+                    code:200,
+                    block:theBlock[0]
+                })
+              } 
+            }catch(error){
+                reject({
+                    message:error,
+                    code:404,
+                    block:false
+                })
+            }
+            
+            
         });
     }
 
@@ -144,9 +206,24 @@ class Blockchain {
      */
     getStarsByWalletAddress (address) {
         let self = this;
-        let stars = [];
         return new Promise((resolve, reject) => {
-            
+            try{
+               const BDataPromises = []
+            const stars = []
+            self.chain.forEach( async (block) => {
+                BDataPromise.push(block.getBData())
+            })
+            const BDatas = await Promise.all(BDataPromises)
+            BDatas.forEach(BData => {
+                if(BDatas.data.owner===address){
+                    stars.push(BDatas.star)
+                }
+            })
+            resolve({message:"Get stars successfully",stars:stars,code:200}) 
+            }
+            catch(error){
+                reject({message:error,stars:false,code:404})
+            }
         });
     }
 
@@ -163,7 +240,7 @@ class Blockchain {
             
         });
     }
-
 }
+
 
 module.exports.Blockchain = Blockchain;   
