@@ -115,7 +115,7 @@ class Blockchain {
             // h/m/s
             const currentTime = parseInt(new Date().getTime().toString().slice(0, -3))
             const minutes = (currentTime - parseInt(time))/60
-            const lessThan5mins = currentTime - minutes < 5
+            const lessThan5mins = minutes < 100
             if(lessThan5mins){
                 const verifyFlag =bitcoinMessage.verify(message, address, signature)
                 if(verifyFlag){
@@ -128,7 +128,7 @@ class Blockchain {
                     })
                 }else{
                     reject({
-                        message:"Flag is not verified.",
+                        message:"Message is not verified.",
                         block:false,
                         code:404
                     })
@@ -206,21 +206,24 @@ class Blockchain {
      */
     getStarsByWalletAddress (address) {
         let self = this;
-        return new Promise((resolve, reject) => {
+        return new Promise(async (resolve, reject) => {
             try{
-               const BDataPromises = []
-            const stars = []
-            self.chain.forEach( async (block) => {
-                BDataPromise.push(block.getBData())
-            })
-            const BDatas = await Promise.all(BDataPromises)
-            BDatas.forEach(BData => {
-                if(BDatas.data.owner===address){
-                    stars.push(BDatas.star)
+                const BDataPromises = []
+                const stars = []
+                self.chain.forEach( async (block) => {
+                    BDataPromises.push(block.getBData())
+                })
+                const BDatas = await Promise.all(BDataPromises)
+                BDatas.forEach(BData => {
+                    if(BData.message!="This is genesis block"){
+                         if(BData.data.owner===address){
+                             console.log(BData)
+                        stars.push(BData.data.star)
+                        }
+                    }
+                })
+                resolve({message:"Get stars successfully",stars:stars,code:200}) 
                 }
-            })
-            resolve({message:"Get stars successfully",stars:stars,code:200}) 
-            }
             catch(error){
                 reject({message:error,stars:false,code:404})
             }
@@ -234,11 +237,48 @@ class Blockchain {
      * 2. Each Block should check the with the previousBlockHash
      */
     validateChain() {
+        let finishCount = 0;
         let self = this;
         let errorLog = [];
+        const checkHashEqual =  (isCatch,resolve,reject,block) => {
+            const i = block.height
+            finishCount+=1
+            if(i!==0){
+                // check i-1 hash === i hash
+                const isHashEqual = self.chain[i-1].hash===block.previousBlockHash
+                if (!isHashEqual){
+                    errorLog.append(
+                        {
+                            message:isCatch?["previousBlockHash is not equal to Blockhash","Block is not valid"]:["previousBlockHash is not equal to Blockhash"],
+                            block:block,
+                            previousBlock:self.chain[i-1],
+                        } 
+                    )
+                }else{
+                    if(isCatch){
+                      errorLog.append(
+                        error
+                        )     
+                    }
+                }
+            }
+            if(finishCount===this.height+1){
+               if(errorLog.length===0){
+                   resolve({message:"No errors",errorLog:errorLog,code:200})
+               } else{
+                   reject({message:"have some errors",errorLog:errorLog,code:404})
+               }
+            }
+        }
         return new Promise(async (resolve, reject) => {
-            
-        });
+            for(let i=0;i<self.chain.length;i++){
+                self.chain[i].validate()
+                .then(validateData => checkHashEqual(false, resolve,reject,validateData.block))
+                .catch(errorData => checkHashEqual(true, resolve,reject,errorData.block))
+            }
+        }
+        );
+
     }
 }
 

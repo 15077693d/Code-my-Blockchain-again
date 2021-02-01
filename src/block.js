@@ -49,15 +49,14 @@ class Block {
 		            previousBlockHash :self.previousBlockHash, 
             }
             const recalculatedHash = SHA256(JSON.stringify(blockWithoutHash)).toString()
-            console.log(recalculatedHash)
             // Comparing if the hashes changed
             const hashIsVaild = currentBlockHash===recalculatedHash
             // Returning the Block is not valid
             if(hashIsVaild){
-                resolve({message:"Block is valid",code:200,data:self})
+                resolve({message:"Block is valid",code:200,block:self})
             }else{
                 // Returning the Block is valid
-                reject({message:"Block is not valid",code:404,data:self})
+                reject({message:"Block is not valid",code:404,block:self})
             }
         });
     }
