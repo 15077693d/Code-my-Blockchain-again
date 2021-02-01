@@ -42,7 +42,8 @@ class Block {
             // Save in auxiliary variable the current block hash
             const currentBlockHash = self.hash
             // Recalculate the hash of the Block
-            const blockWithoutHash = {                                          // Hash of the block
+            const blockWithoutHash = {   
+                    hash: null,                                       // Hash of the block
 		            height:self.height,                                          // Block Height (consecutive number of each block)
 		            body :self.body,   // Will contain the transactions stored in the block, by default it will encode the data
 		            time:self.time,                                              // Timestamp for the Block creation
