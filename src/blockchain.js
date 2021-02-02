@@ -70,6 +70,7 @@ class Blockchain {
                 block.hash = SHA256(JSON.stringify(block)).toString()
                 this.height+=1
                 this.chain.push(block)
+                self.validateChain()
                 resolve({message:"block is added",code:200,block:block})
             }catch(error){
                 reject({message:error, code:404, block:false})
