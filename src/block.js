@@ -57,7 +57,7 @@ class Block {
                 resolve({message:"Block is valid",code:200,block:self})
             }else{
                 // Returning the Block is valid
-                reject({message:"Block is not valid",code:404,block:self})
+                reject(false)
             }
         });
     }

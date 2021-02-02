@@ -115,7 +115,7 @@ class Blockchain {
             // h/m/s
             const currentTime = parseInt(new Date().getTime().toString().slice(0, -3))
             const minutes = (currentTime - parseInt(time))/60
-            const lessThan5mins = minutes < 100
+            const lessThan5mins = minutes < 5
             if(lessThan5mins){
                 const verifyFlag =bitcoinMessage.verify(message, address, signature)
                 if(verifyFlag){
@@ -273,8 +273,13 @@ class Blockchain {
         return new Promise(async (resolve, reject) => {
             for(let i=0;i<self.chain.length;i++){
                 self.chain[i].validate()
-                .then(validateData => checkHashEqual(false, resolve,reject,validateData.block))
-                .catch(errorData => checkHashEqual(true, resolve,reject,errorData.block))
+                .then(validateData => {
+                    if(validateData){
+                        checkHashEqual(false, resolve,reject,validateData.block)
+                    }else{
+                        checkHashEqual(true, resolve,reject,validateData.block)
+                    }
+                })
             }
         }
         );
